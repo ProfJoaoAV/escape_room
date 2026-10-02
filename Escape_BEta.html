@@ -50,7 +50,7 @@ const CODE=R.slice(0,4).map(r=>r.a).join('');
 // =========================
 let g=document.getElementById('c').getContext('2d');const cv=document.getElementById('c'),MG=g;
 const mkc=()=>{const c=document.createElement('canvas');c.width=900;c.height=560;return c};
-const sc=mkc(),dk=mkc(),SG=sc.getContext('2d'),DG=dk.getContext('2d');
+const sc=mkc(),dk=mkc(),SG=sc.getContext('2d'),DG=dk.getContext('2d'),fw=mkc(),FG=fw.getContext('2d');
 const N=10,TW=64,TH=32,OX=450,OY=135,WH=90;
 const P={x:5,y:8.5,fx:0,fy:-1,dir:1,hp:PLAYER_HP,inv:0,cd:0,at:0,kx:0,ky:0},keys={},solved=[],found={};
 let room=0,t0=0,left=TIME,pen=0,modal=null,over=0,near=null,fade=1,toast='',toastT=0,last=Date.now(),E=[],drops=[],parts=[],grace=1.5,shake=0,flash=0,danger=0;
@@ -91,7 +91,8 @@ const SPAWN=[
  [['sp',2,5],['sp',8,5.5],['sp',5,2.2]],
  [['sl',3,2.8],['sl',7,3.8],['bt',5,3],['bt',4,7]],
  [['kn',5,2.6],['gh',2,5],['gh',8,5]]];
-function spawnE(){E=[];drops=[];if(!ENEMIES)return;SPAWN[room].forEach(([t,x,y])=>{const T=ET[t];E.push({t,x,y,hx:x,hy:y,hp:T.hp,mhp:T.hp,tx:x,ty:y,wt:0,kx:0,ky:0,hit:0,ph:Math.random()*6,dir:1,mv:0,st:0,cd:1+Math.random()*2,sw:0,ch:0,cx:0,cy:0,ag:0,dash:0})})}
+function mkE(t,x,y){const T=ET[t];return{t,x,y,hx:x,hy:y,hp:T.hp,mhp:T.hp,tx:x,ty:y,wt:0,kx:0,ky:0,hit:0,ph:Math.random()*6,dir:1,mv:0,st:0,cd:1+Math.random()*2,sw:0,ch:0,cx:0,cy:0,ag:0,dash:0}}
+function spawnE(){E=[];drops=[];if(!ENEMIES)return;SPAWN[room].forEach(([t,x,y])=>E.push(mkE(t,x,y)))}
 const bossAlive=()=>BOSS_REQUIRED&&E.some(e=>e.t==='kn');
 
 // ===== CAMADA ESTÁTICA (chão + paredes) =====
@@ -301,7 +302,7 @@ function draw(){g.fillStyle='#050403';g.fillRect(0,0,900,560);g.save();if(shake>
  g.drawImage(sc,0,0);water();door();beam();torches();
  const L=PIL[room].map(p=>({d:p[0]+p[1]+.4,f:()=>pillar(p)}));DECOR[room].forEach(d=>L.push({d:d.x+d.y,f:()=>DR[d.t](d,...iso(d.x,d.y))}));
  if(room<4)L.push({d:10,f:altar});E.forEach(e=>L.push({d:e.x+e.y,f:()=>drawE(e)}));drops.forEach(o=>L.push({d:o.x+o.y,f:()=>drawDrop(o)}));L.push({d:P.x+P.y,f:player});
- L.sort((a,b)=>a.d-b.d).forEach(o=>o.f());drawParts(false);light();drawParts(true);fogs();g.restore();hud()}
+ L.sort((a,b)=>a.d-b.d).forEach(o=>o.f());drawParts(false);light();drawParts(true);fogs();fogWar();g.restore();hud()}
 
 // ===== LÓGICA =====
 const blocked=(x,y)=>PIL[room].some(p=>Math.hypot(x-p[0],y-p[1])<.7)||(room<4&&Math.hypot(x-5,y-5)<.75)||DECOR[room].some(d=>d.bw&&Math.abs(x-d.x)<d.bw+.28&&Math.abs(y-d.y)<d.bd+.28);
@@ -330,7 +331,7 @@ function updE(dt){
  for(let i=0;i<E.length;i++)for(let j=i+1;j<E.length;j++){const a=E[i],b=E[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d<.6&&d>.001){const k=(.6-d)/2;mv(a,-dx/d*k,-dy/d*k);mv(b,dx/d*k,dy/d*k)}}
  for(const e of E){const T=ET[e.t];if(grace<=0&&P.inv<=0&&Math.hypot(P.x-e.x,P.y-e.y)<T.r+.38)hurt(T.dm,e)}
  danger=E.some(e=>e.ag&&Math.hypot(P.x-e.x,P.y-e.y)<6)?1:0}
-function loop(){const n=Date.now(),dt=Math.min(.05,(n-last)/1000);last=n;fade=Math.max(0,fade-dt*1.5);toastT-=dt;shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);
+function loop(){const n=Date.now(),dt=Math.min(.05,(n-last)/1000);last=n;fade=Math.max(0,fade-dt*1.5);toastT-=dt;darkT=Math.max(0,darkT-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);
  if(!modal&&!over){P.inv=Math.max(0,P.inv-dt);P.cd=Math.max(0,P.cd-dt);P.at=Math.max(0,P.at-dt);grace=Math.max(0,grace-dt);
   let dx=0,dy=0;const k=keys;if(k.w||k.arrowup){dx--;dy--}if(k.s||k.arrowdown){dx++;dy++}if(k.a||k.arrowleft){dx--;dy++}if(k.d||k.arrowright){dx++;dy--}
   k.m=dx||dy;if(k.m){if(!t0)t0=n;const l=Math.hypot(dx,dy),sp=3.4*dt/l;P.fx=dx/l;P.fy=dy/l;if(Math.abs(P.fx-P.fy)>.1)P.dir=(P.fx-P.fy)>0?1:-1;movP(dx*sp,dy*sp)}
@@ -338,15 +339,17 @@ function loop(){const n=Date.now(),dt=Math.min(.05,(n-last)/1000);last=n;fade=Ma
   updE(dt);drops=drops.filter(o=>{if(Math.hypot(P.x-o.x,P.y-o.y)<.7&&P.hp<PLAYER_HP){P.hp++;sfx('pick');say('❤ +1 vida');return false}return true})}
  updParts(dt);
  if(t0&&!over){left=Math.max(0,TIME-pen-((n-t0)/1000|0));if(!left)end(false)}
- document.getElementById('t').textContent=fmt(left);document.getElementById('rm').innerHTML='Sala <b>'+(room+1)+'/5</b> · Enigmas <b>'+solved.filter(Boolean).length+'/4</b>';
+ document.getElementById('t').textContent=fmt(left);document.getElementById('rm').innerHTML='Sala <b>'+(room+1)+'/5</b> · Enigmas <b>'+solved.filter(Boolean).length+'/4</b>'+(room<4?' · 🧩 <b>'+frag[room].filter(Boolean).length+'/3</b>':'');
  near=null;if(room<4&&Math.hypot(P.x-5,P.y-5)<1.6)near='altar';if(Math.hypot(P.x-5,P.y-.5)<1.5)near='door';
- document.getElementById('hint').textContent=modal||over?'':near==='altar'?'E — examinar o enigma desta sala':near==='door'?(room<4?(solved[room]?'E — avançar para a próxima sala ➜':'🔒 A porta está selada — resolve o enigma'):bossAlive()?'⚔ O Cavaleiro Negro guarda o cofre — derrota-o!':'E — usar o cofre 🔒'):'';
+ nearObj=null;if(!near)for(const d of DECOR[room]){if(!d.loot||d.done)continue;const ox=Math.max(0,Math.abs(P.x-d.x)-d.bw),oy=Math.max(0,Math.abs(P.y-d.y)-d.bd);if(Math.hypot(ox,oy)<1.15){nearObj=d;near='obj';break}}
+ document.getElementById('hint').textContent=modal||over?'':near==='altar'?'E — examinar o enigma desta sala':near==='obj'?'E — procurar':near==='door'?(room<4?(solved[room]?'E — avançar para a próxima sala ➜':'🔒 A porta está selada — resolve o enigma'):bossAlive()?'⚔ O Cavaleiro Negro guarda o cofre — derrota-o!':'E — usar o cofre 🔒'):'';
  draw();requestAnimationFrame(loop)}
 function open(id){modal=id;document.getElementById(id).classList.add('on')}
 function closeM(){if(modal){document.getElementById(modal).classList.remove('on');modal=null}}
 function say(t){toast=t;toastT=3}
-function showClue(){const r=R[room];document.getElementById('m1t').textContent=r.n;document.getElementById('m1p').textContent=r.t;document.getElementById('m1m').textContent='';
- const b=document.getElementById('m1b');b.innerHTML='';const im=new Image();im.alt=r.n;b.appendChild(im);
+function showClue(){const r=R[room];document.getElementById('m1t').textContent=r.n;document.getElementById('m1p').textContent=r.t;const nf=frag[room].filter(Boolean).length,mm=document.getElementById('m1m');mm.style.color='#ffb347';mm.textContent=solved[room]?'':nf<3?'🧩 Fragmentos da pista: '+nf+'/3 — procura nos objetos da sala.':'🧩 Pista completa!';
+ const b=document.getElementById('m1b');b.innerHTML='';const im=new Image();im.alt=r.n;im.style.margin='0';const wr=document.createElement('div');wr.style.cssText='position:relative;display:block;width:fit-content;max-width:100%;margin:8px auto';wr.appendChild(im);b.appendChild(wr);
+ for(let i=0;i<3;i++)if(!frag[room][i]){const v=document.createElement('div');v.style.cssText='position:absolute;top:0;bottom:0;left:'+i*33.34+'%;width:33.34%;background:repeating-linear-gradient(45deg,#0b0705,#0b0705 6px,#150e08 6px,#150e08 12px);display:flex;align-items:center;justify-content:center;font-size:34px;color:#6b4a1a';v.textContent='?';wr.appendChild(v)}
  const base=IMG[r.k].replace(/\.\w+$/,''),nfd=base.normalize('NFD'),asc=nfd.replace(/[\u0300-\u036f]/g,''),c=[];if(found[r.k])c.push(found[r.k]);
  [base.normalize('NFC'),nfd,asc,asc.toLowerCase()].forEach(n=>['jpeg','jpg','png','JPG','JPEG','PNG'].forEach(e=>c.push(n+'.'+e)));
  const list=[...new Set([...c.map(n=>/^http/.test(n)?n:BASE+n),...c])];let i=0;im.onload=()=>{found[r.k]=list[i]};
@@ -355,9 +358,9 @@ function showClue(){const r=R[room];document.getElementById('m1t').textContent=r
 function check(){const a=document.getElementById('ans'),m=document.getElementById('m1m');
  if(solved[room]){m.textContent='Já resolveste este enigma!';return}
  if(a.value.trim()===R[room].a){solved[room]=1;closeM();sfx('open');say('🔓 Enigma resolvido! Dígito '+(room+1)+': '+R[room].a+' — a porta abriu-se.')}
- else{sfx('err');m.style.color='#ff6a5a';m.textContent='❌ Resposta errada… tenta contar outra vez.';const b=document.getElementById('m1x');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}}
+ else{sfx('err');m.style.color='#ff6a5a';pen+=5;m.textContent='❌ Resposta errada… (−5 s)';const b=document.getElementById('m1x');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}}
 function interact(){if(modal||over)return;
- if(near==='altar')showClue();
+ if(near==='altar')showClue();else if(near==='obj'&&nearObj)search(nearObj);
  else if(near==='door'){if(room===4){if(bossAlive())say('⚔ O Cavaleiro Negro guarda o cofre — derrota-o primeiro!');else{open('m3');setTimeout(()=>code[0].focus(),50)}}
   else if(solved[room]){room++;P.x=5;P.y=8.5;P.kx=P.ky=0;fade=1;grace=1.6;spawnE();buildStatic();setRoom(room);say(R[room].n+(ENEMIES?' — cuidado com o que ronda aqui…':''))}
   else say('🔒 A porta está selada. Resolve primeiro o enigma da sala.')}}
@@ -378,6 +381,30 @@ function press(k){k=k.toLowerCase();if(modal){if(k==='escape')closeM();else if(k
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key.startsWith('Arrow')||e.key===' ')e.preventDefault();press(e.key)});
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=0});
 document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;b.ontouchstart=ev=>{ev.preventDefault();press(k)};b.ontouchend=()=>{keys[k]=0};b.onmousedown=()=>press(k);b.onmouseup=()=>{keys[k]=0}});
+
+// ===== OBJETOS ESCONDIDOS, ARMADILHAS E FOG OF WAR =====
+const FOG=true; // false = sala totalmente visível
+let frag=[[0,0,0],[0,0,0],[0,0,0],[0,0,0]],nearObj=null,darkT=0,fogA=0;
+const SRCH=['bar','crt','coff','shelf','tree','mush','rock','crys','gold','chest','bone','skull'];
+const POOLT=['bt','sp','dmg','time','dark','fake','fake','fake','heart'];
+const FAKE=['Só pó e teias de aranha.','Um papel rasgado: "o número certo é 9…" Mentira.','Nada de útil — apenas ossos antigos.','Um 3 gravado na madeira… foi riscado.','Um bilhete: "Não confies em ninguém."','Vazio… alguém chegou aqui primeiro.','Uma moeda de ouro. Bonita, mas inútil aqui.'];
+const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+function seedLoot(){DECOR.forEach((ds,r)=>{const sp=shuf(ds.filter(d=>SRCH.includes(d.t))),pl=shuf(POOLT.slice()),nf=r<4?3:0;
+ sp.forEach((d,i)=>{d.done=0;d.loot=i<nf?{k:'f',i}:{k:pl[i-nf]||'fake'}})})}
+function search(d){d.done=1;let k=d.loot.k;if(!ENEMIES&&(k==='bt'||k==='sp'))k='fake';const [sx,sy]=iso(d.x,d.y);burst(sx,sy-20,10,'255,210,120',70,.6,3,1,40);
+ if(k==='f'){frag[room][d.loot.i]=1;sfx('pick');say('🧩 Encontraste um fragmento da pista! ('+frag[room].filter(Boolean).length+'/3)')}
+ else if(k==='bt'||k==='sp'){sfx('hurt');E.push(mkE(k,d.x,Math.min(9.3,d.y+.9)));say(k==='bt'?'🦇 Um morcego escondia-se aqui!':'🕷 Uma aranha salta lá de dentro!')}
+ else if(k==='dmg'){say('☠ Armadilha de dardos! −1 vida');hurt(1,{x:d.x,y:d.y})}
+ else if(k==='time'){pen+=20;sfx('err');say('⏳ Mecanismo antigo… a ampulheta acelerou! −20 s')}
+ else if(k==='dark'){darkT=9;sfx('err');say('🌬 Uma rajada apaga as tochas… a visão encolhe!')}
+ else if(k==='heart'){drops.push({x:d.x,y:Math.min(9.3,d.y+.8)});say('❤ Algo brilha no chão!')}
+ else say(FAKE[Math.random()*FAKE.length|0])}
+function fogWar(){if(!FOG)return;const [px,py]=iso(P.x,P.y),F=FG,s=darkT>0?.5:1,cx=px,cy=py-22,r=105*s,L=300*s;
+ let d=Math.atan2((P.fx+P.fy)*16,(P.fx-P.fy)*32)-fogA;d=Math.atan2(Math.sin(d),Math.cos(d));fogA+=d*.18;
+ F.globalCompositeOperation='source-over';F.clearRect(0,0,900,560);F.fillStyle='rgba(2,1,4,'+(darkT>0?.97:.92)+')';F.fillRect(0,0,900,560);F.globalCompositeOperation='destination-out';
+ let gr=F.createRadialGradient(cx,cy,r*.15,cx,cy,r);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(1,'rgba(0,0,0,0)');F.fillStyle=gr;F.fillRect(cx-r,cy-r,2*r,2*r);
+ for(let k=0;k<5;k++){const h=.28+k*.1;gr=F.createRadialGradient(cx,cy,10,cx,cy,L);gr.addColorStop(0,'rgba(0,0,0,.34)');gr.addColorStop(1,'rgba(0,0,0,0)');F.fillStyle=gr;F.beginPath();F.moveTo(cx,cy);F.arc(cx,cy,L,fogA-h,fogA+h);F.closePath();F.fill()}
+ g.drawImage(fw,0,0)}
 
 // ===== ÁUDIO: música sombria gerada em tempo real (sem ficheiros) =====
 const ROOT=[55,49,46.25,41.2,36.71],PHR=[0,1,3,5,7,8,10],Aud={ctx:null,mute:false,danger:0,nbt:0,nh:0,nbm:0,root:55};
@@ -413,5 +440,5 @@ function sfx(n){const C=Aud.ctx;if(!C||Aud.mute)return;const t=C.currentTime;
 function toggleSnd(){Aud.mute=!Aud.mute;if(Aud.m)Aud.m.gain.setTargetAtTime(Aud.mute?0:.8,Aud.ctx.currentTime,.1);if(Aud.file)Aud.file.muted=Aud.mute;document.getElementById('snd').textContent=Aud.mute?'🔇':'🔊'}
 ['keydown','pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,startAudio,true));
 
-spawnE();buildStatic();say('Espaço — atacar · E — interagir · P — passaporte');loop();
+seedLoot();spawnE();buildStatic();say('Espaço — atacar · E — interagir · P — passaporte');loop();
 </script></body></html>
