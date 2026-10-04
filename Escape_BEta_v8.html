@@ -37,9 +37,16 @@ canvas{transition:box-shadow .8s,border-color .8s}#hud{letter-spacing:.5px;text-
 const TIME=600; // segundos
 const BASE="https://profjoaoav.github.io/escape_room/"; // endereço das imagens
 const IMG={hgp:"HGP.jpeg",port:"Portugues.jpeg",eng:"Ingles.jpeg",cien:"Ciencias.jpeg"}; // mesma pasta do index.html
-const ENEMIES=true;      // false = jogo sem inimigos
-const PLAYER_HP=5;       // vidas do jogador
-const PENALTY=30;        // segundos perdidos ao morrer
+let ENEMIES=true;        // definido no menu: false = modo Escape Room (sem inimigos)
+let PLAYER_HP=5;         // vidas do jogador (depende da dificuldade)
+let PENALTY=30;          // segundos perdidos ao morrer (depende da dificuldade)
+// Dificuldades do modo Aventura. hp/sp/ag = multiplicadores de vida, velocidade e alcance de perseguição;
+// el = frequência de elites; mgcd/mgv = intervalo e velocidade dos projéteis dos magos; bossdm = dano do Cavaleiro Negro
+const DIFFS={
+ facil:{n:'Fácil',i:'🙂',life:7,pen:15,hp:.6,sp:.8,ag:.8,el:.4,mgcd:1.4,mgv:.8,bossdm:1,d:'7 vidas · inimigos lentos e frágeis · morrer custa −15 s'},
+ medio:{n:'Médio',i:'⚔',life:5,pen:30,hp:1,sp:1,ag:1,el:1,mgcd:1,mgv:1,bossdm:2,d:'5 vidas · o equilíbrio original · morrer custa −30 s'},
+ dificil:{n:'Difícil',i:'💀',life:4,pen:45,hp:1.5,sp:1.2,ag:1.15,el:1.5,mgcd:.75,mgv:1.2,bossdm:2,d:'4 vidas · inimigos duros e rápidos · morrer custa −45 s'}};
+let DF=DIFFS.medio,MODE='aventura';
 const BOSS_REQUIRED=true;// é preciso derrotar o Cavaleiro Negro para abrir o cofre
 const MUSIC_FILE="";     // opcional: ficheiro mp3 próprio (ex: "musica.mp3"). Vazio = música sombria gerada pelo código
 const R=[
@@ -524,14 +531,14 @@ function showClue(){const r=R[room];document.getElementById('m1t').textContent=r
  const a=document.getElementById('ans');a.value='';open('m1');setTimeout(()=>a.focus(),50)}
 function check(){const a=document.getElementById('ans'),m=document.getElementById('m1m');
  if(solved[room]){m.textContent='Já resolveste este enigma!';return}
- if(a.value.trim()===R[room].a){solved[room]=1;closeM();sfx('open');say('🔓 Enigma resolvido! Dígito '+(room+1)+': '+R[room].a+' — a porta abriu-se.')}
+ if(a.value.trim()===R[room].a){solved[room]=1;closeM();sfx('open');say('🔓 Enigma resolvido! Dígito '+(room+1)+': '+R[room].a+' — a porta abriu-se.');storyBeat(room)}
  else{sfx('err');m.style.color='#ff6a5a';pen+=5;m.textContent='❌ Resposta errada… (−5 s)';const b=document.getElementById('m1x');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}}
 function interact(){if(modal||over)return;
  if(near==='altar')showClue();else if(near==='obj'&&nearObj)search(nearObj);
  else if(near==='door'){if(room===4){if(bossAlive())say('⚔ O Cavaleiro Negro guarda o cofre — derrota-o primeiro!');else{open('m3');setTimeout(()=>code[0].focus(),50)}}
   else if(solved[room]){room++;P.x=5;P.y=8.5;P.kx=P.ky=0;fade=1;grace=1.6;spawnE();buildStatic();setRoom(room);say(R[room].n+(ENEMIES?' — cuidado com o que ronda aqui…':''))}
   else say('🔒 A porta está selada. Resolve primeiro o enigma da sala.')}}
-function passport(){let h='<p style="font-size:14px">Resolvei o enigma de cada sala para abrir a porta. No fim, juntai os 4 dígitos para abrir o cofre. Os monstros são opcionais — exceto o Cavaleiro Negro, que guarda o cofre. <b>Espaço</b> ataca. Os inimigos largam power-ups: ❤ vida · ⚡ velocidade · 🗡 dano duplo · 🛡 escudo · ⏳ +15 s. <b>Shift</b> = esquiva (invulnerável). <b>3 ataques seguidos</b> = golpe crítico. <b>H</b> = dica do dígito (−20 s). Cuidado com as armadilhas de espigões, os magos (projéteis) e os inimigos ★ elite. Entre salas escolhes uma bênção.</p><div class="row" style="font-size:30px;color:#ffb347">';
+function passport(){let h='<p style="font-size:14px">Resolvei o enigma de cada sala para abrir a porta. No fim, juntai os 4 dígitos para abrir o cofre. <b>H</b> = dica do dígito (−20 s).'+(ENEMIES?' Os monstros são opcionais — exceto o Cavaleiro Negro, que guarda o cofre. <b>Espaço</b> ataca. Os inimigos largam power-ups: ❤ vida · ⚡ velocidade · 🗡 dano duplo · 🛡 escudo · ⏳ +15 s. <b>Shift</b> = esquiva (invulnerável). <b>3 ataques seguidos</b> = golpe crítico. Cuidado com as armadilhas de espigões, os magos (projéteis) e os inimigos ★ elite. Entre salas escolhes uma bênção.':' Modo Escape Room: sem inimigos nem armadilhas — só tu, o tempo e os enigmas.')+'</p><div class="row" style="font-size:30px;color:#ffb347">';
  R.slice(0,4).forEach((r,i)=>h+=`<span class="d" style="display:inline-block;line-height:52px">${solved[i]?r.a:'?'}</span>`);h+='</div>';
  R.slice(0,4).forEach(r=>h+=`<div class="ch"><b style="color:${r.c}">${r.n}</b><br>${r.t}</div>`);document.getElementById('pp').innerHTML=h;open('m2')}
 const code=[];for(let i=0;i<4;i++){const e=document.createElement('input');e.className='d';e.maxLength=1;e.inputMode='numeric';e.autocomplete='off';
@@ -542,7 +549,7 @@ document.getElementById('ans').onkeydown=ev=>{ev.stopPropagation();if(ev.key==='
 function tryCode(){const v=code.map(e=>e.value).join(''),m=document.getElementById('msg');
  if(v===CODE){closeM();end(true)}else{sfx('err');m.style.color='#ff6a5a';m.textContent=v.length<4?'Faltam dígitos!':'❌ Combinação errada…';const b=document.getElementById('m3b');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}}
 function end(w){over=w?'win':'lose';closeM();if(w)sfx('open');setTimeout(()=>{document.getElementById('m4t').textContent=w?'🎉 O cofre abriu-se!':'⌛ O tempo esgotou-se…';
- document.getElementById('m4p').textContent=w?'Escapastes da Cripta de D. Sebastião com '+fmt(left)+' de sobra. Parabéns, equipa!':'A escuridão tomou conta da cripta. Tentai outra vez!';open('m4')},w?900:0)}
+ document.getElementById('m4p').textContent=w?(ENEMIES?'O Cavaleiro Negro inclina a cabeça em despedida. Dentro do cofre repousa o Selo Real de D. Sebastião, intacto depois de séculos. A lenda não mentiu: quem estuda, observa e trabalha em equipa nunca perde a memória do seu reino.':'Dentro do cofre repousa o Selo Real de D. Sebastião, intacto depois de séculos. A lenda não mentiu: quem estuda, observa e trabalha em equipa nunca perde a memória do seu reino.')+' Escapastes da Cripta com '+fmt(left)+' de sobra. Parabéns!':(ENEMIES?'A areia do relógio acabou e a pesada porta selou-se para sempre. O Cavaleiro Negro volta a montar guarda ao segredo do seu rei… Tentai outra vez!':'A areia do relógio acabou e a pesada porta selou-se para sempre. O segredo de D. Sebastião continua guardado… Tentai outra vez!');open('m4')},w?900:0)}
 function press(k){k=k.toLowerCase();if(modal){if(k==='escape')closeM();else if(k==='p'&&modal==='m2')closeM();return}
  if(k==='e')interact();else if(k===' '||k==='j'||k==='x')attack();else if(k==='p')passport();else if(k==='m')toggleSnd();else keys[k]=1}
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key.startsWith('Arrow')||e.key===' ')e.preventDefault();press(e.key)});
@@ -558,7 +565,7 @@ const FAKE=['Só pó e teias de aranha.','Um papel rasgado: "o número certo é 
 const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 function seedLoot(){DECOR.forEach((ds,r)=>{const sp=shuf(ds.filter(d=>SRCH.includes(d.t))),pl=shuf(POOLT.slice()),nf=r<4?3:0;
  sp.forEach((d,i)=>{d.done=0;d.loot=i<nf?{k:'f',i}:{k:pl[i-nf]||'fake'}})})}
-function search(d){d.done=1;let k=d.loot.k;if(!ENEMIES&&(k==='bt'||k==='sp'))k='fake';const [sx,sy]=iso(d.x,d.y);burst(sx,sy-20,10,'255,210,120',70,.6,3,1,40);
+function search(d){d.done=1;let k=d.loot.k;if(!ENEMIES&&(k==='bt'||k==='sp'||k==='dmg'))k='fake';const [sx,sy]=iso(d.x,d.y);burst(sx,sy-20,10,'255,210,120',70,.6,3,1,40);
  if(k==='f'){frag[room][d.loot.i]=1;sfx('pick');say('🧩 Encontraste um fragmento da pista! ('+frag[room].filter(Boolean).length+'/3)')}
  else if(k==='bt'||k==='sp'){sfx('hurt');E.push(mkE(k,d.x,Math.min(9.3,d.y+.9)));say(k==='bt'?'🦇 Um morcego escondia-se aqui!':'🕷 Uma aranha salta lá de dentro!')}
  else if(k==='dmg'){say('☠ Armadilha de dardos! −1 vida');hurt(1,{x:d.x,y:d.y})}
@@ -654,7 +661,7 @@ SPR.mg=e=>{const b=Math.sin(e.ph*2)*2,c=e.cd2<.6;g.fillStyle='#2a1450';g.beginPa
  g.fillStyle='#4a2a80';g.beginPath();g.arc(0,-40-b,7,0,7);g.fill();g.fillStyle='#120826';g.beginPath();g.arc(0,-40-b,5,0,7);g.fill();g.fillStyle='#d6a0ff';g.fillRect(-3,-41-b,2,2);g.fillRect(1,-41-b,2,2);
  g.strokeStyle='#5a3a1a';g.lineWidth=3;sl_(12,-2,12,-46-b);g.fillStyle=c?'#ff9aff':'#b464ff';g.beginPath();g.arc(12,-48-b,c?6.5:4,0,7);g.fill()};
 SPAWN[1].push(['mg',8,8]);SPAWN[2].push(['mg',2,2.2]);SPAWN[3].push(['mg',8,8]);SPAWN[4].push(['mg',8,8],['mg',2,8]);
-const _mk=mkE;mkE=function(t,x,y){const e=_mk(t,x,y);e.cd2=1.5+Math.random()*2;if(t!=='kn'&&Math.random()<.15+room*.06){e.el=1;e.hp=e.mhp=e.hp*2}return e};
+const _mk=mkE;mkE=function(t,x,y){const e=_mk(t,x,y);e.cd2=1.5+Math.random()*2;if(t!=='kn'&&Math.random()<(.15+room*.06)*DF.el){e.el=1;e.hp=e.mhp=e.hp*2}return e};
 const _sp2=spawnE;spawnE=function(){PR=[];_sp2()};
 const _de2=drawE;drawE=function(e){_de2(e);if(!e.el)return;const[sx,sy]=iso(e.x,e.y);g.save();g.globalCompositeOperation='lighter';g.strokeStyle='rgba(255,210,60,.7)';g.lineWidth=2.5;g.beginPath();g.ellipse(sx,sy+2,30,15,0,0,7);g.stroke();g.restore();g.lineWidth=1;g.font='16px serif';g.textAlign='center';g.fillStyle='#ffd24a';g.fillText('★',sx,sy-(ET[e.t].fly?74:66))};
 const _at=attack;attack=function(){if(modal||over||P.cd>0||P.dsh>0||P.dyT>0)return;P.cmb=P.cmt>0?(P.cmb+1)%3:0;P.cmt=1;if(P.cmb===2)shake=.15;if(P1.dist)feixeIniciar();_at()};
@@ -672,9 +679,9 @@ function openUp(){upT=Date.now();const o=document.getElementById('m5o');o.innerH
 const _up2=updParts;updParts=function(dt){_up2(dt);if(modal||over)return;P.dc=Math.max(0,P.dc-dt);if(P.feixe&&P.feixe.t>0)P.feixe.t-=dt;P.cmt=Math.max(0,P.cmt-dt);
  if(P.dsh>0){P.dsh-=dt;movP(P.dvx*dt,P.dvy*dt);const[x,y]=iso(P.x,P.y);burst(x,y-20,2,'170,220,255',20,.35,5,1,0)}
  TR[room].forEach(([x,y],i)=>{if(trapSt(i)===2&&Math.abs(P.x-x)<.5&&Math.abs(P.y-y)<.5&&P.inv<=0&&P.b.shd<=0&&grace<=0)hurt(1,{x,y})});
- E.forEach(e=>{if(e.t!=='mg'||grace>0)return;e.cd2-=dt;const dx=P.x-e.x,dy=P.y-e.y,d=Math.hypot(dx,dy)||1;if(e.cd2<=0){if(d<8){PR.push({x:e.x,y:e.y,vx:dx/d*4.2,vy:dy/d*4.2,l:3});sfx('swing')}e.cd2=2.2+Math.random()*1.2}e.dir=(dx-dy)>=0?1:-1});
+ E.forEach(e=>{if(e.t!=='mg'||grace>0)return;e.cd2-=dt;const dx=P.x-e.x,dy=P.y-e.y,d=Math.hypot(dx,dy)||1;if(e.cd2<=0){if(d<8){PR.push({x:e.x,y:e.y,vx:dx/d*4.2*DF.mgv,vy:dy/d*4.2*DF.mgv,l:3});sfx('swing')}e.cd2=(2.2+Math.random()*1.2)*DF.mgcd}e.dir=(dx-dy)>=0?1:-1});
  PR=PR.filter(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;if(p.l<=0||p.x<.3||p.y<.3||p.x>N||p.y>N||blocked(p.x,p.y))return false;if(Math.hypot(P.x-p.x,P.y-p.y)<.45&&P.inv<=0&&P.b.shd<=0){hurt(1,p);return false}return true});
- if(room!==upRoom){upRoom=room;score+=100;openUp()}};
+ if(room!==upRoom){upRoom=room;score+=100;storyRoom(room,()=>{if(ENEMIES)openUp()})}};
 const _die=die;const _dieNow=function(){deaths++;_die()};die=function(){if(!P1.ok){_dieNow();return}if(!(P.dyT>0)){P.dyT=P1CFG.tMorte;P.ht=0}};
 const _hud2=hud;hud=function(){desenharFeixe();
  TR[room].forEach(([x,y],i)=>{const st=trapSt(i),q=[iso(x-.45,y-.45),iso(x+.45,y-.45),iso(x+.45,y+.45),iso(x-.45,y+.45)];poly(q,st==0?'rgba(0,0,0,.35)':st==1?`rgba(255,60,40,${.25+.2*Math.sin(Date.now()/60)})`:'rgba(255,70,40,.45)','rgba(0,0,0,.6)');
@@ -683,8 +690,8 @@ const _hud2=hud;hud=function(){desenharFeixe();
  _hud2();
  g.fillStyle='#000a';g.fillRect(24,50,104,8);g.fillStyle=P.dc>0?'#4a6a8a':'#6fd0ff';g.fillRect(26,52,100*(1-P.dc/(1.1*P.up.dsh)),4);g.font='10px Georgia';g.fillStyle='#bcd';g.textAlign='left';g.fillText('ESQUIVA (Shift)',26,72);
  if(P.cmt>0){for(let i=0;i<3;i++){g.fillStyle=i<=P.cmb?(P.cmb===2?'#ffd24a':'#fff'):'#444';g.beginPath();g.arc(32+i*16,86,5,0,7);g.fill()}}};
-const _end=end;end=function(w){_end(w);setTimeout(()=>{const f=score+(w?left*3+(deaths?0:200):0);let r=[];if(w)try{r=JSON.parse(localStorage.getItem('escape_rank')||'[]');r.push(f);r.sort((a,b)=>b-a);r=r.slice(0,5);localStorage.setItem('escape_rank',JSON.stringify(r))}catch(e){}
- const p=document.getElementById('m4p');p.style.whiteSpace='pre-line';p.textContent+='\n\n★ Pontuação final: '+f+' (abates '+kills+', mortes '+deaths+')'+(r.length?'\n🏆 Top 5: '+r.join(' · '):'')},w?950:50)};
+const _end=end;end=function(w){_end(w);setTimeout(()=>{const f=score+(w?left*3+(deaths?0:200):0);let r=[];if(w)try{r=JSON.parse(localStorage.getItem('escape_rank_'+MODE)||'[]');r.push(f);r.sort((a,b)=>b-a);r=r.slice(0,5);localStorage.setItem('escape_rank_'+MODE,JSON.stringify(r))}catch(e){}
+ const p=document.getElementById('m4p');p.style.whiteSpace='pre-line';p.textContent+='\n\n★ Pontuação final: '+f+(ENEMIES?' (abates '+kills+', mortes '+deaths+')':'')+(r.length?'\n🏆 Top 5: '+r.join(' · '):'')},w?950:50)};
 
 // ===== MENU INICIAL: introdução ao Passaporte + escolha da personagem =====
 let menuSel=-1,menuPasso=0;
@@ -698,11 +705,13 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 #m0 .card canvas{width:100%;max-width:200px;height:auto;border:0;box-shadow:none;border-radius:0;display:block;margin:0 auto 6px}
 #m0 .bar{position:sticky;bottom:-16px;background:linear-gradient(#150e0800,#150e08 30%);padding:12px 0 2px;margin-top:8px}
 #m0 button:disabled{opacity:.4;cursor:not-allowed}
+#m0 .card.mode{width:250px}#m0 .card.dif{padding:8px}
 </style>`);
+const ET0=JSON.parse(JSON.stringify(ET));
+const _mk3=mkE;mkE=function(t,x,y){const e=_mk3(t,x,y);e.hp=e.mhp=Math.max(1,Math.round(e.hp*DF.hp));return e};
 function menuHTML(){
  const mins=Math.round(TIME/60),chips=R.map(r=>`<span class="chip" style="border-color:${r.c};color:${r.c}">${r.n}</span>`).join('');
- const boss=BOSS_REQUIRED&&ENEMIES?`derrota o <b>Cavaleiro Negro</b>, que guarda o cofre, e `:'';
- const luta=ENEMIES?`<p style="font-size:14px"><b>Espaço</b> ataca · <b>Shift</b> esquiva · <b>H</b> pede uma dica do dígito (−20 s) · morrer custa −${PENALTY} s. Os monstros são opcionais${BOSS_REQUIRED?', exceto o Cavaleiro Negro':''}.</p>`:`<p style="font-size:14px"><b>H</b> pede uma dica do dígito (−20 s).</p>`;
+ const luta=`<p style="font-size:14px"><b>H</b> pede uma dica do dígito (−20 s). A seguir escolhes o modo de jogo: <b>Escape Room</b> (só enigmas) ou <b>Aventura</b> (com monstros).</p>`;
  return `<div class="modal" id="m0"><div class="box">
 <div id="m0a"><h2 style="text-align:center">🏰 A Cripta de D. Sebastião</h2>
 <p style="text-align:center;font-style:italic;margin:0 0 6px">A porta fechou-se atrás de ti. Tens <b>${mins} minutos</b> para escapar!</p>
@@ -716,22 +725,75 @@ function menuHTML(){
 <ol><li>Em cada sala, procura nos objetos (<b>E</b>) os <b>3 fragmentos</b> da pista. Só vês a imagem completa quando os juntares todos.</li>
 <li>Vai ao <b>altar</b> (<b>E</b>), lê o desafio e descobre o <b>dígito secreto</b>. Escreve-o e carrega em Verificar.</li>
 <li>A porta abre-se e podes avançar para a sala seguinte.</li>
-<li>Na última sala, ${boss}usa os <b>4 dígitos</b> para abrir o cofre.</li></ol>
+<li>Na última sala, usa os <b>4 dígitos</b> para abrir o cofre (no modo Aventura, tens primeiro de derrotar o Cavaleiro Negro, que o guarda).</li></ol>
 <div class="chips">${chips}</div>${luta}
-<div class="bar row"><button onclick="menuIr(1)">Escolher personagem ▶</button></div></div>
+<div class="bar row"><button onclick="menuIr(1)">Escolher modo de jogo ▶</button></div></div>
+<div id="m0c" style="display:none"><h2 style="text-align:center">Como queres jogar?</h2>
+<div class="cards">${[['escape','🗝','Escape Room','Sem inimigos e sem armadilhas. Só pistas, enigmas e o relógio a contar.'],['aventura','⚔','Aventura','Monstros, magos, armadilhas e o Cavaleiro Negro a guardar o cofre.']].map((m,i)=>`<button class="card mode" id="mode${i}" onclick="modePick('${m[0]}')"><div style="font-size:54px;line-height:70px">${m[1]}</div><b>${i+1} · ${m[2]}</b><br><small>${m[3]}</small></button>`).join('')}</div>
+<div id="difw" style="display:none"><h3 style="text-align:center">Dificuldade</h3><div class="cards" style="margin:6px 0">${Object.entries(DIFFS).map(([k,v])=>`<button class="card dif" id="dif_${k}" onclick="difPick('${k}')" style="width:200px"><div style="font-size:30px">${v.i}</div><b>${v.n}</b> <small>(${k[0].toUpperCase()})</small><br><small>${v.d}</small></button>`).join('')}</div></div>
+<p style="text-align:center;font-size:13px">Teclas <b>1</b> e <b>2</b> escolhem o modo · <b>F</b> <b>M</b> <b>D</b> escolhem a dificuldade · <b>Enter</b> continua.</p>
+<div class="bar row"><button onclick="menuIr(0)">◀ Ler a missão</button><button id="m0next" onclick="menuIr(2)" disabled>Escolher personagem ▶</button></div></div>
 <div id="m0b" style="display:none"><h2 style="text-align:center">Escolhe a tua personagem</h2>
 <div class="cards">${CHARS.map((c,i)=>`<button class="card" id="card${i}" onclick="menuPick(${i})"><canvas id="cv${i}" width="200" height="170"></canvas><b>${i+1} · ${c.nome}</b><br><small>${c.desc}</small><div id="st${i}" style="font-size:12px;color:#b8862e;min-height:16px"></div></button>`).join('')}</div>
 <p style="text-align:center;font-size:13px">Mesma vida e velocidade. <b>Herói:</b> ataca de perto, em arco, e empurra os inimigos. <b>Heroína:</b> dispara uma rajada em linha reta (alcance ${FEIXE.alc} casas) que atravessa os inimigos, mas recarrega um pouco mais devagar.<br>Teclas <b>1</b> e <b>2</b> escolhem · <b>Enter</b> começa.</p>
-<div class="bar row"><button onclick="menuIr(0)">◀ Ler a missão</button><button id="m0go" onclick="menuStart()" disabled>Começar a aventura ▶</button></div></div>
+<div class="bar row"><button onclick="menuIr(1)">◀ Modo de jogo</button><button id="m0go" onclick="menuStart()" disabled>Começar a aventura ▶</button></div></div>
 </div></div>`}
-function menuIr(p){menuPasso=p;document.getElementById('m0a').style.display=p?'none':'';document.getElementById('m0b').style.display=p?'':'none';document.getElementById('m0').firstChild.scrollTop=0}
+function menuIr(p){if(p===2&&!menuMode)return;menuPasso=p;['m0a','m0c','m0b'].forEach((id,i)=>document.getElementById(id).style.display=i===p?'':'none');document.getElementById('m0').firstChild.scrollTop=0}
+let menuMode=null,menuDif='medio';
+function modePick(m){menuMode=m;['escape','aventura'].forEach((k,i)=>document.getElementById('mode'+i).classList.toggle('sel',k===m));document.getElementById('difw').style.display=m==='aventura'?'':'none';difPick(menuDif);document.getElementById('m0next').disabled=false}
+function difPick(k){menuDif=k;Object.keys(DIFFS).forEach(j=>document.getElementById('dif_'+j).classList.toggle('sel',j===k))}
+function applyMode(){ENEMIES=menuMode==='aventura';DF=ENEMIES?DIFFS[menuDif]:DIFFS.medio;MODE=ENEMIES?menuDif:'escape';PLAYER_HP=DF.life;PENALTY=DF.pen;P.hp=PLAYER_HP;
+ for(const t in ET){const b=ET0[t];ET[t].sp=b.sp*DF.sp;ET[t].ag=t==='mg'?b.ag:b.ag*DF.ag;ET[t].dm=t==='kn'?DF.bossdm:b.dm}
+ if(!ENEMIES)TR.forEach((_,i)=>TR[i]=[]);
+ spawnE();grace=1.5}
 function menuPick(i){menuSel=i;CHARS.forEach((c,j)=>document.getElementById('card'+j).classList.toggle('sel',j===i));document.getElementById('m0go').disabled=false}
-function menuStart(){if(menuSel<0)return;P1=PSPR[menuSel];if(document.activeElement)document.activeElement.blur();document.getElementById('m0').classList.remove('on');modal=null;say('Espaço — atacar · E — interagir · P — passaporte')}
+function menuStart(){if(menuSel<0||!menuMode)return;P1=PSPR[menuSel];applyMode();if(document.activeElement)document.activeElement.blur();document.getElementById('m0').classList.remove('on');modal=null;storyIntro()}
 function menuKey(q){if(menuPasso===0){if(q==='enter')menuIr(1);return}
- if(q==='1'||q==='2'){if(CHARS[+q-1])menuPick(+q-1)}else if(q==='enter')menuStart();else if(q==='arrowleft'||q==='backspace')menuIr(0)}
+ if(menuPasso===1){if(q==='1')modePick('escape');else if(q==='2')modePick('aventura');else if(menuMode==='aventura'&&(q==='f'||q==='m'||q==='d'))difPick({f:'facil',m:'medio',d:'dificil'}[q]);else if(q==='enter')menuIr(2);else if(q==='arrowleft'||q==='backspace')menuIr(0);return}
+ if(q==='1'||q==='2'){if(CHARS[+q-1])menuPick(+q-1)}else if(q==='enter')menuStart();else if(q==='arrowleft'||q==='backspace')menuIr(1)}
 function menuInit(){document.body.insertAdjacentHTML('beforeend',menuHTML());
  PSPR.forEach((s,i)=>{const pintar=()=>{const cv=document.getElementById('cv'+i);if(!cv)return;if(s.ok)s.retrato(cv);else if(s.falhou)document.getElementById('st'+i).textContent='(sem imagem: usa o cavaleiro)'};s.cb=pintar;pintar()});
  open('m0')}
+
+// ===== NARRATIVA: prólogo, entrada em cada sala, desfecho de cada enigma e epílogo =====
+document.head.insertAdjacentHTML('beforeend','<style>#m6 .box{max-width:640px;text-align:center;border-color:var(--sc,#8a5a1e)}#m6 .ic{font-size:44px;line-height:54px}#m6 h2{margin:4px 0 10px;color:var(--sc,#ff9d3a)}#m6 #m6p{font-size:18px;line-height:1.6;min-height:132px;text-align:left;white-space:pre-line;margin:6px 0 12px}#m6 small{opacity:.65}</style>');
+document.body.insertAdjacentHTML('beforeend','<div class="modal" id="m6"><div class="box"><div class="ic" id="m6i"></div><h2 id="m6t"></h2><p id="m6p"></p><div class="row"><button id="m6b" onclick="storyNext()">Continuar ▶</button></div><p style="margin:8px 0 0"><small>Enter / Espaço = continuar · Esc = saltar a história</small></p></div></div>');
+let ST=null,stType=0,stClock=0,bossSeen=0,bossDone=0;
+function story(o,cb){if(modal&&modal!=='m6'){setTimeout(()=>story(o,cb),300);return}
+ ST={pages:o.pages,i:0,cb,txt:'',n:0,l:Date.now()};
+ document.getElementById('m6i').textContent=o.i||'📜';document.getElementById('m6t').textContent=o.t||'';document.getElementById('m6').style.setProperty('--sc',o.c||'#ff9d3a');
+ clearInterval(stClock);stClock=setInterval(()=>{const n=Date.now();if(t0)t0+=n-ST.l;ST.l=n},50); // o relógio fica parado enquanto lês
+ open('m6');storyShow()}
+function storyShow(){ST.txt=ST.pages[ST.i];ST.n=0;const p=document.getElementById('m6p');p.textContent='';
+ document.getElementById('m6b').textContent=ST.i<ST.pages.length-1?'Continuar ▶':'Avançar ▶';
+ clearInterval(stType);stType=setInterval(()=>{ST.n+=2;p.textContent=ST.txt.slice(0,ST.n);if(ST.n>=ST.txt.length)clearInterval(stType)},18)}
+function storyNext(){if(!ST)return;if(ST.n<ST.txt.length){ST.n=ST.txt.length;document.getElementById('m6p').textContent=ST.txt;clearInterval(stType);return}
+ if(ST.i<ST.pages.length-1){ST.i++;storyShow()}else storyClose()}
+function storyClose(){if(!ST)return;clearInterval(stType);clearInterval(stClock);if(t0)t0+=Date.now()-ST.l;const cb=ST.cb;ST=null;closeM();if(cb)cb()}
+function storyKey(q){if(q==='enter'||q===' '||q==='e')storyNext();else if(q==='escape')storyClose()}
+const _pr3=press;press=function(k){const q=k.toLowerCase();if(modal==='m6'){storyKey(q);return}_pr3(k)};
+
+function storyIntro(){const A=ENEMIES,mins=Math.round(TIME/60);
+ story({i:'🏰',t:'Prólogo · O Desejado',c:'#e8b94a',pages:[
+ 'Alcácer Quibir, 1578. O jovem rei D. Sebastião parte para a batalha e nunca mais regressa. Durante séculos, o povo esperou pelo seu «Desejado»…',
+ 'Diz a lenda que, antes de partir, o rei mandou esconder sob o mosteiro um cofre com o Selo Real, a prova de que Portugal nunca perde a memória. O cofre só abre com quatro chaves-número, guardadas em quatro salas, uma por cada saber: História, Português, Inglês e Ciências.',
+ A?'Esta noite, a porta da cripta fechou-se atrás de ti. Nas sombras, esqueletos, espectros e magos ainda cumprem a sua última ordem: proteger o segredo. E, no fundo da cripta, vela o Cavaleiro Negro, o mais fiel soldado do rei.\n\nTens '+mins+' minutos antes de a cripta se selar para sempre.':'Esta noite, a porta da cripta fechou-se atrás de ti. Os guardiões dormem e o silêncio pesa nas pedras. Só o relógio de areia continua a correr.\n\nTens '+mins+' minutos antes de a cripta se selar para sempre.',
+ 'SALA I · A Dinastia de Avis\nO primeiro Selo está guardado no altar. Procura nos objetos da sala (E) os três fragmentos da pista, depois aproxima-te do altar para decifrar o enigma.\n\nMover: WASD / setas · Interagir: E · Passaporte: P'+(A?' · Atacar: Espaço · Esquivar: Shift':'')]});}
+
+const ROOMSTORY=[null,
+ {i:'📜',t:'Capítulo II · A Profecia do Guardião',x:['Atravessas a porta e o ar fica mais frio. Numa mesa de pedra repousa um papiro com a Profecia do Guardião. As letras parecem mexer-se à luz das tochas: quem souber ler as palavras que descrevem, os adjetivos, descobrirá a segunda chave.','Espectros deslizam entre as estantes, atraídos pelo cheiro a pergaminho antigo. Um mago murmura ao fundo.']},
+ {i:'🦊',t:'Chapter III · The Foggy Forest',x:['A parede desaparece e dá lugar a uma floresta coberta de nevoeiro, dentro da própria cripta! Dizem que foi aqui que um cavaleiro inglês, aliado de Portugal desde 1386, escondeu a sua mensagem. Está escrita em inglês: só quem contar bem os animais entenderá.','Entre os troncos, olhos brilham no escuro: aranhas gigantes tecem as suas teias e um mago observa-te à distância.']},
+ {i:'🐌',t:'Capítulo IV · O Lago e o Solo',x:['O chão torna-se húmido. Um lago subterrâneo reflete as tochas e a terra fervilha de pequenos seres. A natureza também guarda segredos: observa com atenção os invertebrados que rastejam por aqui.','O lodo ganha vida e morcegos esvoaçam no teto. Esta é a última sala antes do cofre: não baixes a guarda!']},
+ {i:'🔒',t:'Capítulo Final · O Cofre de D. Sebastião',x:['Chegaste à Sala do Cofre. No centro, a arca do rei brilha com quatro fechaduras e uma figura de armadura ergue-se na penumbra: o espírito do Cavaleiro Negro inclina a cabeça.\n\n«Quem trouxe as quatro chaves merece abrir. Que o reino não esqueça o seu rei.»','Chegaste à Sala do Cofre. No centro, a arca do rei brilha com quatro fechaduras apagadas. Diante dela, o Cavaleiro Negro ergue a espada.\n\n«Ninguém toca no segredo do meu rei sem provar o seu valor!»\n\nDerrota-o e usa os quatro dígitos para abrir o cofre.']}];
+function storyRoom(r,cb){const o=ROOMSTORY[r];if(!o){cb&&cb();return}
+ const c=R[r].c;story({i:o.i,t:o.t,c,pages:[o.x[ENEMIES&&r<4?0:ENEMIES?1:0]+(ENEMIES&&r<4?'\n\n'+o.x[1]:'')]},cb)}
+const BEATS=['O primeiro Selo brilha na parede: foi a Dinastia de Avis que fez de Portugal um reino de navegadores. A porta de pedra range e abre-se devagar.',
+ 'As letras do papiro ardem e transformam-se em cinza dourada. A profecia cumpriu-se e o segundo Selo ilumina-se. A passagem está livre!',
+ 'O nevoeiro dissipa-se e, ao longe, ouve-se um sino: a velha aliança entre Portugal e Inglaterra voltou a ser honrada. O terceiro Selo está conquistado!',
+ 'As águas do lago acalmam como um espelho e o solo deixa de tremer. A natureza reconheceu a tua atenção. Só falta o último passo: o cofre.'];
+function storyBeat(r){if(BEATS[r])story({i:'✨',t:'Selo '+(r+1)+' de 4 conquistado',c:R[r].c,pages:[BEATS[r]]})}
+const _up4=updParts;updParts=function(dt){_up4(dt);if(modal||over||!ENEMIES||room!==4)return;
+ if(E.some(e=>e.t==='kn'))bossSeen=1;else if(bossSeen&&!bossDone){bossDone=1;story({i:'⚔',t:'O Cavaleiro Negro tomba',c:'#ff5a4a',pages:['O Cavaleiro Negro cai de joelhos e a espada desfaz-se em pó.\n\n«Cumpri o meu dever até ao fim… O cofre é teu. Que o reino não se esqueça do seu rei.»']})}};
 
 seedLoot();spawnE();buildStatic();say('Espaço — atacar · E — interagir · P — passaporte');menuInit();loop();
 </script></body></html>
