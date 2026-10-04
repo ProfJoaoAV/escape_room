@@ -1033,16 +1033,16 @@ function menuHTML(){
 <div id="m0b" style="display:none"><h2 style="text-align:center">Escolhe a tua personagem</h2>
 <div class="cards">${CHARS.map((c,i)=>`<button class="card" id="card${i}" onclick="menuPick(${i})"><canvas id="cv${i}" width="200" height="170"></canvas><b>${i+1} · ${c.nome}</b><br><small>${c.desc}</small><div id="st${i}" style="font-size:12px;color:#b8862e;min-height:16px"></div></button>`).join('')}</div>
 <h3 style="text-align:center;margin:14px 0 0">Modo de jogo</h3>
-<div class="modo"><button id="modoE1" class="sel" onclick="menuModo(true)"><b>⚔ Com inimigos</b><br><small>Monstros, armadilhas e o Cavaleiro Negro a guardar o cofre.</small></button><button id="modoE0" onclick="menuModo(false)"><b>🕊 Sem inimigos</b><br><small>Só exploração e enigmas: sem monstros, sem armadilhas e sem Cavaleiro Negro.</small></button></div>
+<div class="modo"><button id="modoE1" class="sel" onclick="menuModo(true)"><b>⚔ Aventura</b><br><small>Com inimigos: monstros, armadilhas e o Cavaleiro Negro a guardar o cofre.</small></button><button id="modoE0" onclick="menuModo(false)"><b>🔍 Escape Room</b><br><small>Só exploração e enigmas: sem monstros, sem armadilhas e sem Cavaleiro Negro.</small></button></div>
 <h3 style="text-align:center;margin:12px 0 0">Dificuldade</h3>
 <div class="modo dif"><button id="dif_facil" onclick="menuDif('facil')"><b>🌱 Fácil</b> <small>(F)</small><br><small>12 min · 7 vidas · inimigos mais fracos, lentos e menos frequentes</small></button><button id="dif_normal" class="sel" onclick="menuDif('normal')"><b>⚔ Normal</b> <small>(N)</small><br><small>10 min · 5 vidas · a experiência original</small></button><button id="dif_dificil" onclick="menuDif('dificil')"><b>🔥 Difícil</b> <small>(D)</small><br><small>9 min · 4 vidas · inimigos mais fortes e rápidos; objetos só aparecem no mapa de perto</small></button></div>
-<p style="text-align:center;font-size:13px">Mesma vida e velocidade. <b>Herói:</b> ataca de perto, em arco, e empurra os inimigos. <b>Heroína:</b> dispara uma rajada em linha reta (alcance ${FEIXE.alc} casas) que atravessa os inimigos, mas recarrega um pouco mais devagar.<br>Teclas <b>1</b> e <b>2</b> escolhem a personagem · <b>C</b> com inimigos · <b>S</b> sem inimigos · <b>Enter</b> começa.</p>
+<p style="text-align:center;font-size:13px">Mesma vida e velocidade. <b>Herói:</b> ataca de perto, em arco, e empurra os inimigos. <b>Heroína:</b> dispara uma rajada em linha reta (alcance ${FEIXE.alc} casas) que atravessa os inimigos, mas recarrega um pouco mais devagar.<br>Teclas <b>1</b> e <b>2</b> escolhem a personagem · <b>C</b> Aventura · <b>S</b> Escape Room · <b>Enter</b> começa.</p>
 <div class="bar row"><button onclick="menuIr(0)">◀ Ler a missão</button><button id="m0go" onclick="menuStart()" disabled>Começar a aventura ▶</button></div></div>
 </div></div>`}
 function menuIr(p){menuPasso=p;document.getElementById('m0a').style.display=p?'none':'';document.getElementById('m0b').style.display=p?'':'none';document.getElementById('m0').firstChild.scrollTop=0}
 function menuPick(i){menuSel=i;CHARS.forEach((c,j)=>document.getElementById('card'+j).classList.toggle('sel',j===i));document.getElementById('m0go').disabled=false}
 function menuModo(v){ENEMIES=!!v;document.getElementById('modoE1').classList.toggle('sel',ENEMIES);document.getElementById('modoE0').classList.toggle('sel',!ENEMIES)}
-function menuStart(){if(menuSel<0)return;P1=PSPR[menuSel];spawnE();say(ENEMIES?'Espaço — atacar · E — interagir · P — passaporte':'Modo sem inimigos · E — interagir · P — passaporte');if(document.activeElement)document.activeElement.blur();document.getElementById('m0').classList.remove('on');modal=null}
+function menuStart(){if(menuSel<0)return;P1=PSPR[menuSel];spawnE();say(ENEMIES?'Espaço — atacar · E — interagir · P — passaporte':'Modo Escape Room · E — interagir · P — passaporte');if(document.activeElement)document.activeElement.blur();document.getElementById('m0').classList.remove('on');modal=null}
 function menuKey(q){if(menuPasso===0){if(q==='enter')menuIr(1);return}
  if(q==='1'||q==='2'){if(CHARS[+q-1])menuPick(+q-1)}else if(q==='c')menuModo(true);else if(q==='s')menuModo(false);else if(q==='enter')menuStart();else if(q==='arrowleft'||q==='backspace')menuIr(0)}
 function menuInit(){document.body.insertAdjacentHTML('beforeend',menuHTML());
@@ -1562,8 +1562,8 @@ const _end8=end;end=function(w){_end8(w);setTimeout(()=>{
  p.innerHTML=(w?`<div class="stars">${[0,1,2].map(i=>`<i class="${i<st?'on':''}">★</i>`).join('')}</div><div>Escapastes da Cripta de D. Sebastião!</div>`:`<div>A escuridão tomou conta da cripta. Tentai outra vez!</div>`)+
  `<div class="stg"><div><small>⏱ TEMPO GASTO</small><b>${fmt(Math.max(0,el))}</b></div><div><small>⏳ TEMPO QUE SOBROU</small><b>${fmt(left)}</b></div>`+
  `<div><small>🧩 FRAGMENTOS</small><b>${fr}/12</b></div><div><small>🔎 OBJETOS PROCURADOS</small><b>${ob}/${mx}</b></div>`+
- (ENEMIES?`<div><small>⚔ INIMIGOS DERROTADOS</small><b>${kills}</b></div><div><small>💀 MORTES</small><b>${deaths}</b></div>`:`<div><small>🎮 MODO</small><b>Sem inimigos</b></div><div><small>🔓 ENIGMAS</small><b>${solved.filter(Boolean).length}/4</b></div>`)+
- `<div><small>⚙ DIFICULDADE</small><b>${DIFF.n}</b></div><div><small>★ PONTUAÇÃO</small><b>${f}</b></div></div>`+(r.length?`<div class="rk">🏆 Melhores (${ENEMIES?'com':'sem'} inimigos): ${r.join(' · ')}</div>`:'')},w?1000:60)};
+ (ENEMIES?`<div><small>⚔ INIMIGOS DERROTADOS</small><b>${kills}</b></div><div><small>💀 MORTES</small><b>${deaths}</b></div>`:`<div><small>⏳ PENALIZAÇÕES</small><b>${pen} s</b></div><div><small>🔓 ENIGMAS</small><b>${solved.filter(Boolean).length}/4</b></div>`)+
+ `<div><small>⚙ DIFICULDADE</small><b>${DIFF.n}</b></div><div><small>★ PONTUAÇÃO</small><b>${f}</b></div></div>`+(r.length?`<div class="rk">🏆 Melhores (${ENEMIES?'Aventura':'Escape Room'}): ${r.join(' · ')}</div>`:'')},w?1000:60)};
 // ---------- MENU: dificuldade, mensagens adaptadas e memória das escolhas ----------
 function menuDif(id){DIFF=DIFFS[id]||DIFFS.normal;TIME=DIFF.time;PLAYER_HP=DIFF.hp;PENALTY=DIFF.pen;left=TIME;if(!t0)P.hp=PLAYER_HP;
  for(const k in DIFFS){const b=document.getElementById('dif_'+k);if(b)b.classList.toggle('sel',k===DIFF.id)}
@@ -1627,6 +1627,56 @@ body.touch #hint:empty{display:none}
  setInterval(()=>{if(!TOUCHON)return;const hide=!!(modal||over);tc.style.visibility=hide?'hidden':'visible';if(hide)resetJ();document.getElementById('bE').classList.toggle('hot',!!near&&!hide);document.getElementById('bSnd').textContent=Aud.mute?'🔇':'🔊'},120);
  document.addEventListener('contextmenu',e=>{if(TOUCHON)e.preventDefault()});
  const auto=matchMedia('(pointer:coarse)').matches||('ontouchstart' in window&&!matchMedia('(pointer:fine)').matches);setTouchUI(auto);
+})();
+
+
+// ===== V10: HISTÓRIA POR CAMADAS · SOM E TENSÃO · RESUMO FINAL MELHORADO =====
+(function(){
+const ST={hints:0,wrong:0,pages:[],q:[]},A9={next:0,step:0,sec:-1,lr:0};
+const PRO=['1578. Em Alcácer Quibir, D. Sebastião desaparece e o reino fica sem rei. Diz a lenda que o Desejado regressará numa manhã de nevoeiro.','Séculos depois, uma porta de pedra fecha-se atrás de vós. Estais na cripta onde os últimos sábios de Avis esconderam o seu maior segredo, protegido por quatro saberes: <b>História, Língua, Mundo e Natureza</b>.','Resolvei os enigmas a tempo. Cada sala deixa-vos um <b>dígito</b>… e uma <b>página do diário</b> de quem aqui ficou.'];
+const PG=[{t:'Página I · A Crónica',x:'«Avis deu a este reino dois séculos de glória. Mas um rei sem herdeiro é um reino à beira do nevoeiro. Guardei a lista dos reis para que ninguém esqueça de onde viemos.» — o Cronista'},
+{t:'Página II · A Profecia',x:'«Escrevi-a em palavras cuidadas, pois só quem lê com atenção encontra o caminho. As palavras guardam mais segredos do que as portas.» — o Escriba'},
+{t:'Página III · Entre o Nevoeiro',x:'«Quem atravessa a floresta sem olhar de perto acaba perdido. Contei todos os bichos para não me esquecer: o mundo lá fora fala muitas línguas.» — o Viajante'},
+{t:'Página IV · A Terra Viva',x:'«Debaixo da pedra e da água vive um mundo inteiro, pequeno e silencioso. Quem o respeita nunca se perde.» — o Naturalista'}];
+const EPI='No cofre não havia ouro nem coroa: apenas um livro com as quatro páginas do diário e uma frase — «O Desejado regressa sempre que alguém aprende e recorda.» A lenda continua viva, graças a vós.';
+const WH=r=>['','Ouve-se o ranger de pergaminhos… alguém escreveu aqui uma profecia.','O ar fica húmido. Um nevoeiro cerrado cobre o chão da floresta.','Gotas caem na escuridão. Sente-se o cheiro a lama e a água parada.',ENEMIES?'No fundo, o cofre brilha. Um vulto negro guarda-o…':'No fundo, o cofre espera em silêncio.'][r]||'';
+document.head.insertAdjacentHTML('beforeend',`<style>#al9{position:fixed;inset:0;pointer-events:none;z-index:3}#mS .box{max-width:560px}#mSp p{line-height:1.5;margin:8px 0}.epi9{font-style:italic;color:#e8d3a0;margin:10px 0;font-size:15px}#eqp9{display:none}@media print{body>*:not(#m4){display:none!important}#m4{position:static!important;display:block!important;background:#fff!important;padding:0}#m4 .box{max-width:none;background:#fff!important;color:#000!important;border:2px solid #000;box-shadow:none;max-height:none;overflow:visible}#m4 h2{color:#000}#m4 .stg div{background:#fff!important;border:1px solid #888}#m4 .stg b{color:#000}#m4 .stg small,.rk{color:#444!important}#m4 button,#m4 input{display:none!important}#m4 .stars{color:#c90;text-shadow:none}#eqp9{display:block!important;font-size:20px;font-weight:bold;margin-top:8px}.epi9{color:#000}}</style>`);
+document.body.insertAdjacentHTML('beforeend','<div class="modal" id="mS"><div class="box"><h2 id="mSt" style="text-align:center"></h2><div id="mSp"></div><div class="row"><button id="mSb" onclick="closeM()">Continuar</button></div></div></div><div id="al9"></div>');
+// ---------- SOM ----------
+const ok9=()=>Aud.ctx&&!Aud.mute&&Aud.m&&Aud.noise;
+const tn=(f1,f2,d,ty,v,dl=0,w=0)=>{const C=Aud.ctx,t=C.currentTime+dl,o=C.createOscillator(),gn=C.createGain();o.type=ty;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f2),t+d);gn.gain.setValueAtTime(.0001,t);gn.gain.linearRampToValueAtTime(v,t+Math.min(.03,d/3));gn.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(gn);gn.connect(Aud.m);if(w&&Aud.wet)gn.connect(Aud.wet);o.start(t);o.stop(t+d+.05)};
+const nz=(ty,f,q,d,v,dl=0,w=0,sw=0)=>{const C=Aud.ctx,t=C.currentTime+dl,s=C.createBufferSource(),b=C.createBiquadFilter(),gn=C.createGain();s.buffer=Aud.noise;s.loop=true;b.type=ty;b.frequency.setValueAtTime(f,t);if(sw)b.frequency.linearRampToValueAtTime(sw,t+d);b.Q.value=q;gn.gain.setValueAtTime(.0001,t);gn.gain.linearRampToValueAtTime(v,t+d*.35);gn.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(b);b.connect(gn);gn.connect(Aud.m);if(w&&Aud.wet)gn.connect(Aud.wet);s.start(t,Math.random(),d+.05)};
+const AMB={drip:()=>tn(2200,900,.12,'sine',.07,0,1),
+chain:()=>[0,.07,.15,.26].forEach(d=>{nz('bandpass',3200+Math.random()*800,6,.05,.08,d);tn(1500,1100,.18,'triangle',.025,d,1)}),
+rustle:()=>[0,.12,.27].forEach(d=>nz('highpass',4500,.5,.14,.07,d)),
+whisper:()=>nz('bandpass',1700,5,.9,.06,0,1,2300),
+wind:()=>nz('bandpass',260,1.2,3,.1,0,1,640),
+owl:()=>{tn(430,340,.35,'sine',.07,0,1);tn(430,330,.5,'sine',.07,.55,1)},
+frog:()=>{tn(150,230,.09,'sawtooth',.04);tn(150,230,.09,'sawtooth',.04,.14);tn(140,200,.12,'sawtooth',.04,.3)},
+rumble:()=>tn(80,50,3,'sine',.09,0,1),
+creak:()=>{tn(150,80,.9,'sawtooth',.05,0,1);nz('bandpass',700,3,.9,.05,0,1,300)}};
+const ROOMAMB=[['drip','chain'],['rustle','whisper'],['wind','owl'],['drip','frog'],['rumble','whisper']];
+const _mt=musicTick;musicTick=function(){_mt();try{if(!ok9()||MUSIC_FILE)return;const t=Aud.ctx.currentTime,ten=(t0&&!over&&left<=180)?1-left/180:0;
+ if(Aud.tg&&Aud.f){Aud.tg.gain.setTargetAtTime(Aud.danger*.07+ten*.08,t,.4);Aud.f.frequency.setTargetAtTime(220+Aud.danger*380+ten*320,t,.5)}
+ if(t>A9.next){const l=ROOMAMB[room]||ROOMAMB[0];AMB[l[Math.random()*l.length|0]]();A9.next=t+4+Math.random()*7}
+ if(left!==A9.sec){A9.sec=left;if(t0&&!over&&left>0){if(left<=60)tn(left<=20?1500:1100,left<=20?1200:900,.05,'square',.04);if(left===60||left===30||left===10)sfx('warn')}}}catch(e){}};
+setInterval(()=>{try{if(!ok9()||modal||over||!keys.m||P.dyT>0)return;const n=performance.now();if(n>A9.step){A9.step=n+(P.b.spd>0?270:400);const w=room===2||room===3;A9.lr^=1;nz('lowpass',(w?420:300)+A9.lr*60,.7,.1,.16);if(w)nz('bandpass',room===3?1200:2500,1,.12,.05,.02)}}catch(e){}},50);
+// alerta visual no último minuto
+setInterval(()=>{const al=document.getElementById('al9'),T=document.getElementById('t');if(!al)return;if(t0&&!over&&left>0&&left<=60){const k=1-left/60,p=.5+.5*Math.sin(Date.now()/(left<=20?150:300));al.style.boxShadow='inset 0 0 '+(80+90*k)+'px rgba(210,0,0,'+((.12+.38*k)*(.4+.6*p)).toFixed(3)+')';if(T)T.style.color='#ff4a3a'}else{al.style.boxShadow='none';if(T)T.style.color=''}},80);
+// ---------- HISTÓRIA ----------
+const showStory=(t,h,b)=>{document.getElementById('mSt').textContent=t;document.getElementById('mSp').innerHTML=h;document.getElementById('mSb').textContent=b;open('mS');if(ok9())AMB.rustle()};
+setInterval(()=>{if(modal||over||!ST.q.length)return;const n=ST.q.shift();try{if(n==='pro')showStory('🏰 A Cripta de D. Sebastião',PRO.map(x=>'<p>'+x+'</p>').join(''),'Entrar na cripta');else{if(!ST.pages.includes(n))ST.pages.push(n);showStory('📖 '+PG[n].t,'<p style="font-style:italic">'+PG[n].x+'</p><p style="font-size:13px;color:#b8962e">Página guardada no teu Passaporte (P).</p>','Continuar')}}catch(e){}},400);
+const _ms9=menuStart;menuStart=function(){const go=menuSel>=0;_ms9();if(go)ST.q.push('pro')};
+const _ck9=check;check=function(){const s0=solved[room],p0=pen;_ck9();if(!s0&&solved[room]){if(room<4)ST.q.push(room)}else if(pen-p0===5)ST.wrong++};
+const _say9=say;say=function(t){if(typeof t==='string'&&t.indexOf('Dica (')>0)ST.hints++;_say9(t)};
+const _bs9=buildStatic;buildStatic=function(){_bs9();try{if(ST.r9!==room){const f=ST.r9===undefined;ST.r9=room;if(!f){if(ok9())AMB.creak();setTimeout(()=>{if(!over&&room===ST.r9)say(WH(room))},3300)}}}catch(e){}};
+const _p9=press;press=function(k){const q=String(k).toLowerCase();if(modal==='mS'&&(q==='enter'||q===' '||q==='e')){closeM();return}_p9(k)};
+const _pp9=passport;passport=function(){_pp9();try{const el=document.getElementById('pp');if(el&&ST.pages.length)el.insertAdjacentHTML('beforeend','<h3>📖 Diário encontrado</h3>'+ST.pages.slice().sort().map(n=>'<p style="font-size:14px"><b>'+PG[n].t+'</b><br><i>'+PG[n].x+'</i></p>').join(''))}catch(e){}};
+// ---------- RESUMO FINAL ----------
+window.prt9=()=>{const n=document.getElementById('eq9').value.trim();document.getElementById('eqp9').textContent=n?'Equipa: '+n:'';window.print()};
+const _end9=end;end=function(w){_end9(w);setTimeout(()=>{try{const p=document.getElementById('m4p');if(!p||p.dataset.x9)return;p.dataset.x9=1;const g9=p.querySelector('.stg');
+ if(g9){g9.insertAdjacentHTML('beforeend','<div><small>💡 PISTAS USADAS</small><b>'+ST.hints+'</b></div><div><small>❌ RESPOSTAS ERRADAS</small><b>'+ST.wrong+'</b></div><div><small>📖 PÁGINAS DO DIÁRIO</small><b>'+ST.pages.length+'/4</b></div><div><small>🎮 MODO</small><b>'+(ENEMIES?'Aventura':'Escape Room')+'</b></div>');if(w)g9.insertAdjacentHTML('beforebegin','<p class="epi9">'+EPI+'</p>')}
+ const bx=document.querySelector('#m4 .box');if(bx&&!document.getElementById('pr9'))bx.insertAdjacentHTML('beforeend','<div class="row" id="pr9" style="margin-top:8px"><input id="eq9" placeholder="Nome da equipa" maxlength="30" style="font:inherit;padding:6px 10px;background:#0d0805;color:#ffb347;border:2px ridge #8a5a1e;border-radius:4px"><button onclick="prt9()">🖨 Imprimir / guardar PDF</button></div><div id="eqp9"></div>')}catch(e){}},(w?1000:60)+80)};
 })();
 
 // ===== V9: aplica a escala HQ a cada frame =====
