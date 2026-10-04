@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Escape Room – A Cripta de D. Sebastião</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#050403;color:#d9b66a;font-family:Georgia,serif;display:flex;flex-direction:column;align-items:center;min-height:100vh}
@@ -757,7 +757,7 @@ function menuInit(){document.body.insertAdjacentHTML('beforeend',menuHTML());
 
 // ===== NARRATIVA: prólogo, entrada em cada sala, desfecho de cada enigma e epílogo =====
 document.head.insertAdjacentHTML('beforeend','<style>#m6 .box{max-width:640px;text-align:center;border-color:var(--sc,#8a5a1e)}#m6 .ic{font-size:44px;line-height:54px}#m6 h2{margin:4px 0 10px;color:var(--sc,#ff9d3a)}#m6 #m6p{font-size:18px;line-height:1.6;min-height:132px;text-align:left;white-space:pre-line;margin:6px 0 12px}#m6 small{opacity:.65}</style>');
-document.body.insertAdjacentHTML('beforeend','<div class="modal" id="m6"><div class="box"><div class="ic" id="m6i"></div><h2 id="m6t"></h2><p id="m6p"></p><div class="row"><button id="m6b" onclick="storyNext()">Continuar ▶</button></div><p style="margin:8px 0 0"><small>Enter / Espaço = continuar · Esc = saltar a história</small></p></div></div>');
+document.body.insertAdjacentHTML('beforeend','<div class="modal" id="m6"><div class="box"><div class="ic" id="m6i"></div><h2 id="m6t"></h2><p id="m6p"></p><div class="row"><button id="m6b" onclick="storyNext()">Continuar ▶</button><button onclick="storyClose()" title="Saltar a história">⏭ Saltar</button></div><p style="margin:8px 0 0"><small>Enter / Espaço = continuar · Esc = saltar a história</small></p></div></div>');
 let ST=null,stType=0,stClock=0,bossSeen=0,bossDone=0;
 function story(o,cb){if(modal&&modal!=='m6'){setTimeout(()=>story(o,cb),300);return}
  ST={pages:o.pages,i:0,cb,txt:'',n:0,l:Date.now()};
@@ -794,6 +794,56 @@ const BEATS=['O primeiro Selo brilha na parede: foi a Dinastia de Avis que fez d
 function storyBeat(r){if(BEATS[r])story({i:'✨',t:'Selo '+(r+1)+' de 4 conquistado',c:R[r].c,pages:[BEATS[r]]})}
 const _up4=updParts;updParts=function(dt){_up4(dt);if(modal||over||!ENEMIES||room!==4)return;
  if(E.some(e=>e.t==='kn'))bossSeen=1;else if(bossSeen&&!bossDone){bossDone=1;story({i:'⚔',t:'O Cavaleiro Negro tomba',c:'#ff5a4a',pages:['O Cavaleiro Negro cai de joelhos e a espada desfaz-se em pó.\n\n«Cumpri o meu dever até ao fim… O cofre é teu. Que o reino não se esqueça do seu rei.»']})}};
+
+// ===== CONTROLOS TÁCTEIS (telemóvel / tablet): joystick flutuante à esquerda + botões à direita =====
+// Ativam-se sozinhos em ecrãs tácteis (pointer:coarse). Para testar no computador: abrir o ficheiro com ?touch=1
+(function(){
+ if(!(matchMedia('(pointer:coarse)').matches||/[?&]touch=1/.test(location.search)))return;
+ document.body.classList.add('touch');
+ document.head.insertAdjacentHTML('beforeend',`<style>
+ html,body{overscroll-behavior:none}
+ body.touch{overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+ body.touch .box{touch-action:pan-y}body.touch input{-webkit-user-select:text;user-select:text}
+ body.touch #pad,body.touch #hud span:nth-child(3),body.touch #m6 small{display:none!important}
+ body.touch #hud{padding:4px 10px;font-size:13px}
+ body.touch canvas{width:min(100vw,calc((100dvh - 78px)*900/560));max-width:none;height:auto}
+ #tc{position:fixed;inset:0;z-index:4;pointer-events:none}
+ #tc>*{pointer-events:auto;touch-action:none}
+ #jz{position:absolute;left:0;bottom:0;width:52%;height:68%;pointer-events:auto}
+ #jb{position:absolute;left:24px;bottom:34px;width:112px;height:112px;margin:0;border-radius:50%;border:3px solid #d9b66aaa;background:#0008;opacity:.4;pointer-events:none!important;transition:opacity .15s}
+ #jb.on{opacity:.85}
+ #jk{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:radial-gradient(#ffcf7a,#b8862e);box-shadow:0 0 12px #000}
+ .tb{position:absolute;border-radius:50%;border:3px solid #d9b66a;background:radial-gradient(#9c2a2a,#4a0e0e);color:#fff1c8;font-size:30px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px #000;opacity:.88}
+ .tb.dn{transform:scale(.9);filter:brightness(1.4)}
+ .tb small{display:block;font-size:11px;letter-spacing:.5px}
+ #tA{right:22px;bottom:30px;width:94px;height:94px;font-size:40px}
+ #tD{right:126px;bottom:96px;width:70px;height:70px}
+ #tE{right:40px;bottom:134px;width:72px;height:72px;font-size:26px;font-weight:bold}
+ #tE.solo{right:22px;bottom:30px;width:94px;height:94px;font-size:34px}
+ #tP,#tH{width:46px;height:46px;font-size:22px;top:calc(env(safe-area-inset-top,0px) + 40px);background:radial-gradient(#4a3a1a,#1a120a)}
+ #tP{right:10px}#tH{right:64px}
+ </style>`);
+ document.body.insertAdjacentHTML('beforeend','<div id="tc"><div id="jz"></div><div id="jb"><div id="jk"></div></div><button class="tb" id="tA">⚔</button><button class="tb" id="tD">💨</button><button class="tb" id="tE">E</button><button class="tb" id="tH">💡</button><button class="tb" id="tP">📜</button></div>');
+ const $=id=>document.getElementById(id),tc=$('tc'),jz=$('jz'),jb=$('jb'),jk=$('jk'),R0=52;
+ let jid=null,cx=0,cy=0;
+ const free=()=>['w','a','s','d'].forEach(k=>keys[k]=0);
+ function joyEnd(){jid=null;free();jk.style.transform='';jb.classList.remove('on');jb.style.left='';jb.style.top='';jb.style.bottom=''}
+ function joyMove(x,y){let dx=x-cx,dy=y-cy;const d=Math.hypot(dx,dy);if(d>R0){dx*=R0/d;dy*=R0/d}
+  jk.style.transform=`translate(${dx}px,${dy}px)`;free();const m=Math.hypot(dx,dy);if(m<14)return;const nx=dx/m,ny=dy/m;
+  if(ny<-.38)keys.w=1;if(ny>.38)keys.s=1;if(nx<-.38)keys.a=1;if(nx>.38)keys.d=1}
+ jz.addEventListener('pointerdown',e=>{if(modal||over||jid!==null)return;jid=e.pointerId;jz.setPointerCapture(e.pointerId);
+  cx=Math.min(Math.max(e.clientX,R0+14),innerWidth*.52-R0);cy=Math.min(Math.max(e.clientY,R0+14),innerHeight-R0-14);
+  jb.style.left=(cx-56)+'px';jb.style.top=(cy-56)+'px';jb.style.bottom='auto';jb.classList.add('on');joyMove(e.clientX,e.clientY)});
+ jz.addEventListener('pointermove',e=>{if(e.pointerId===jid)joyMove(e.clientX,e.clientY)});
+ ['pointerup','pointercancel'].forEach(t=>jz.addEventListener(t,e=>{if(e.pointerId===jid)joyEnd()}));
+ function btn(id,fn,rep){const b=$(id);let iv=0;const stop=()=>{b.classList.remove('dn');clearInterval(iv)};
+  b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);b.classList.add('dn');fn();if(rep){clearInterval(iv);iv=setInterval(fn,rep)}});
+  ['pointerup','pointercancel'].forEach(t=>b.addEventListener(t,stop))}
+ btn('tA',()=>press(' '),170);btn('tD',()=>press('shift'));btn('tE',()=>press('e'));btn('tH',()=>press('h'));btn('tP',()=>press('p'));
+ // mostrar só quando se está a jogar; sem inimigos (Escape Room) não há ataque nem esquiva
+ setInterval(()=>{const hide=!!modal||!!over;tc.style.display=hide?'none':'';if(hide&&jid!==null)joyEnd();
+  $('tA').style.display=$('tD').style.display=ENEMIES?'':'none';$('tE').classList.toggle('solo',!ENEMIES)},120);
+})();
 
 seedLoot();spawnE();buildStatic();say('Espaço — atacar · E — interagir · P — passaporte');menuInit();loop();
 </script></body></html>
